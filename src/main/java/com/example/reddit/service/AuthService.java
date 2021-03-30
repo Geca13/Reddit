@@ -1,8 +1,78 @@
 package com.example.reddit.service;
 
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.reddit.dto.RegisterRequest;
+import com.example.reddit.exceptions.InvalidTokenException;
+import com.example.reddit.exceptions.UserNotFoundException;
+import com.example.reddit.modal.NotificationEmail;
+import com.example.reddit.modal.User;
+import com.example.reddit.modal.VerificationToken;
+import com.example.reddit.repository.UserRepository;
+import com.example.reddit.repository.VerificationTokenRepository;
+
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class AuthService {
+	
+	
+	private final PasswordEncoder encoder;
+	private final UserRepository userRepository;
+	private final VerificationTokenRepository tokenRepository;
+	private final MailService mailSevice;
+	
+	@Transactional
+	public void signUp(RegisterRequest request) {
+		User user = new User();
+		user.setUsername(request.getUsername());
+		user.setEmail(request.getEmail());
+		user.setPassword(encoder.encode(request.getPassword()));
+		user.setEnabled(false);
+		user.setCreated(Instant.now());
+		userRepository.save(user);
+		
+		String token = generateVerificationToken(user);
+		mailSevice.sendEmail(new NotificationEmail("Please Activate your account",
+				user.getEmail(),"Thank you for signing up, please click on the link to activate your account : "
+				+"http:/localhost:8081/api/auth/accountVerification/" + token));
+	}
+
+	private String generateVerificationToken(User user) {
+		
+		String vToken = UUID.randomUUID().toString();
+		VerificationToken token = new VerificationToken();
+		token.setUser(user);
+		token.setToken(vToken);
+		
+		tokenRepository.save(token);
+		return vToken;
+		
+	}
+
+	public void verifyAccount(String token) {
+		Optional<VerificationToken> verificationToken = tokenRepository.findByToken(token);
+		verificationToken.orElseThrow(() -> new InvalidTokenException("Invalid token"));
+		fetchUserAndEnable(verificationToken.get());
+		
+	}
+
+	@Transactional
+	private void fetchUserAndEnable(VerificationToken verificationToken) {
+		String username= verificationToken.getUser().getUsername();
+		
+		User user = userRepository.findByUsername(username).orElseThrow(() ->new UserNotFoundException("User with username " + username + " is not found"));
+		user.setEnabled(true);
+		userRepository.save(user);
+	}
 
 }
