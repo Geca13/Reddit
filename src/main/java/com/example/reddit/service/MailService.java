@@ -26,6 +26,7 @@ public class MailService {
 	public void sendEmail(NotificationEmail notificationEmail) throws EmailNotSentException {
 		
 		MimeMessagePreparator messagePreparator = mimeMessage -> {
+			
 			MimeMessageHelper helper = new MimeMessageHelper(mimeMessage);
 			helper.setFrom("karafiloski84@gmail.com");
 			helper.setSubject(notificationEmail.getSubject());
