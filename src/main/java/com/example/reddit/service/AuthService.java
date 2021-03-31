@@ -6,9 +6,15 @@ import java.util.UUID;
 
 import javax.transaction.Transactional;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.reddit.dto.AuthentiticationResponce;
+import com.example.reddit.dto.LoginRequest;
 import com.example.reddit.dto.RegisterRequest;
 import com.example.reddit.exceptions.InvalidTokenException;
 import com.example.reddit.exceptions.UserNotFoundException;
@@ -17,6 +23,7 @@ import com.example.reddit.modal.User;
 import com.example.reddit.modal.VerificationToken;
 import com.example.reddit.repository.UserRepository;
 import com.example.reddit.repository.VerificationTokenRepository;
+import com.example.reddit.security.JWTProvider;
 
 import lombok.AllArgsConstructor;
 
@@ -29,6 +36,8 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final VerificationTokenRepository tokenRepository;
 	private final MailService mailSevice;
+	private final AuthenticationManager manager;
+	private JWTProvider provider;
 	
 	@Transactional
 	public void signUp(RegisterRequest request) {
@@ -72,6 +81,13 @@ public class AuthService {
 		User user = userRepository.findByUsername(username).orElseThrow(() ->new UserNotFoundException("User with username " + username + " is not found"));
 		user.setEnabled(true);
 		userRepository.save(user);
+	}
+
+	public AuthentiticationResponce login(LoginRequest request) {
+	Authentication auth =	manager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+		SecurityContextHolder.getContext().setAuthentication(auth);
+	  String token = provider.generateToken(auth);
+	  return new AuthentiticationResponce(token , request.getUsername());
 	}
 
 }

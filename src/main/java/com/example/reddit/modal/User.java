@@ -40,4 +40,6 @@ public class User {
 	private Instant created;
 	
 	private Boolean enabled;
+
+	
 }

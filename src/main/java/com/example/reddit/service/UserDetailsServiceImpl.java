@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.example.reddit.exceptions.UserNotFoundException;
 import com.example.reddit.modal.User;
 import com.example.reddit.repository.UserRepository;
+import static java.util.Collections.singletonList;
 
 import lombok.AllArgsConstructor;
 
@@ -29,7 +30,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		Optional<User> userOptional = userRepository.findByUsername(username);
 		User user = userOptional.orElseThrow(() ->new UserNotFoundException("User with username " + username + " is not found"));
-		return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), user.getEnabled(),true,true,true,getAuthorities("USER"));
+		 return new org.springframework.security
+	                .core.userdetails.User(user.getUsername(), user.getPassword(),
+	    	                  ((UserDetails) user).isEnabled(), true,
+	    	                true, true, getAuthorities("USER"));
 	}
 
 	private Collection<? extends GrantedAuthority> getAuthorities(String role) {
