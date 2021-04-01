@@ -8,10 +8,12 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
+import static io.jsonwebtoken.Jwts.parser;
 import javax.annotation.PostConstruct;
+
 
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import com.example.reddit.exceptions.KeyExeption;
 import com.example.reddit.modal.User;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
 @Service
@@ -54,6 +57,27 @@ public class JWTProvider {
 			 }
 	}
 	
+	public boolean validateToken(String jwt) {
+		
+		parser().setSigningKey(getPublicKey()).parseClaimsJws(jwt);
+		return true;
+	}
+
+	private PublicKey getPublicKey() {
+		try {
+			return keyStore.getCertificate("springblog").getPublicKey();
+		} catch (KeyStoreException e) {
+			 throw new KeyExeption("Problem retreiving the key");
+		}
+		
+	}
 	
+	public String getUsernameFromJwt(String token) {
+		Claims claims = (Claims) parser()
+				.setSigningKey(getPublicKey())
+				.parse(token)
+				.getBody();
+		return claims.getSubject();
+	}
 	
 }
