@@ -10,6 +10,8 @@ import javax.persistence.Table;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
+import org.springframework.security.core.userdetails.UserDetails;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +23,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class User  {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,6 +42,17 @@ public class User {
 	private Instant created;
 	
 	private Boolean enabled;
+
+	public boolean isEnabled() {
+		if (this.enabled == true) {
+			return true;
+		}
+		return false;
+	}
+	
+	
+
+	
 
 	
 }

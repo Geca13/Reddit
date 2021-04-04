@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.reddit.dto.CommentsDto;
 import com.example.reddit.modal.Comment;
 import com.example.reddit.modal.Post;
-import com.example.reddit.service.CommentsService;
+import com.example.reddit.service.CommentService;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 
 public class CommentsController {
 	
-	private final CommentsService commentService;
+	private final CommentService commentService;
 	
 	@PostMapping
 	public ResponseEntity<Void> createComment(@RequestBody CommentsDto commentsDto){
@@ -36,12 +36,12 @@ public class CommentsController {
 	
 	@GetMapping	("/by-post/{id}")
 	public ResponseEntity<List<CommentsDto>> getAllCommentsForPost(@PathVariable Long id){
-		return  ResponseEntity.status(HttpStatus.OK).body( commentService.getCommentsForPost(id));
+		return  ResponseEntity.status(HttpStatus.OK).body( commentService.getAllCommentsForPost(id));
 		
 	}
 	@GetMapping	("/by-user/{userName}")
 	public ResponseEntity<List<CommentsDto>> getAllCommentsForUser(@PathVariable String userName){
-		return  ResponseEntity.status(HttpStatus.OK).body( commentService.getCommentsForUser(userName));
+		return  ResponseEntity.status(HttpStatus.OK).body( commentService.getAllCommentsForUser(userName));
 		
 	}
 

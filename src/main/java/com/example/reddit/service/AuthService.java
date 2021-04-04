@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.validation.Valid;
+
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.reddit.dto.AuthentiticationResponce;
 import com.example.reddit.dto.LoginRequest;
+import com.example.reddit.dto.RefreshTokenRequest;
 import com.example.reddit.dto.RegisterRequest;
 import com.example.reddit.exceptions.InvalidTokenException;
 import com.example.reddit.exceptions.UserNotFoundException;
@@ -38,7 +41,8 @@ public class AuthService {
 	private final VerificationTokenRepository tokenRepository;
 	private final MailService mailSevice;
 	private final AuthenticationManager manager;
-	private JWTProvider provider;
+	private final JWTProvider provider;
+	private final RefreshTokenService refreshService;
 	
 	@Transactional
 	public void signUp(RegisterRequest request) {
@@ -91,17 +95,35 @@ public class AuthService {
 		user.setEnabled(true);
 		userRepository.save(user);
 	}
-
+	@Transactional
 	public AuthentiticationResponce login(LoginRequest request) {
 	Authentication auth =	manager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 		SecurityContextHolder.getContext().setAuthentication(auth);
 	  String token = provider.generateToken(auth);
-	  return new AuthentiticationResponce(token , request.getUsername());
+	  return  AuthentiticationResponce.builder()
+			  .authToken(token)
+			  .refreshToken(refreshService.generateRefreshToken().getToken())
+			  .expiresAt(Instant.now().plusMillis(provider.getJwtExpirationInMillis()))
+			  .username(request.getUsername())
+			  .build();
 	}
 
 	public boolean isLoggedIn() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
     }
+
+	public AuthentiticationResponce refreshToken(@Valid RefreshTokenRequest request) {
+		
+		 refreshService.validateRerfeshToken(request.getRefreshToken());
+		 String token = provider.generateTokenWithUsername(request.getUsername());
+		 
+		 return AuthentiticationResponce.builder()
+				 .authToken(token)
+				 .refreshToken(request.getRefreshToken())
+				 .expiresAt(Instant.now().plusMillis(provider.getJwtExpirationInMillis()))
+				 .username(request.getUsername())
+				 .build();
+	}
 
 }
